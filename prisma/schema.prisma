@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  motorcycles Motorcycle[]
+  serviceRecords ServiceRecord[]
+  complaints Complaint[]
+}
+
+model Motorcycle {
+  id               String   @id @default(cuid())
+  brand            String
+  model            String
+  variant          String?
+  plateNumber      String   @unique
+  year             Int
+  stnkExpiry       DateTime
+  usageType        String   // harian, komuter, touring, olahraga
+  initialKm        Int
+  currentKm        Int
+  userId           String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceRecords ServiceRecord[]
+  complaints     Complaint[]
+  reminders      Reminder[]
+}
+
+model ServiceRecord {
+  id          String   @id @default(cuid())
+  date        DateTime
+  km          Int
+  actions     String   // JSON array of service actions
+  spareparts  String   // JSON array of spareparts used
+  notes       String?
+  cost        Int?
+  motorcycleId String
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  motorcycle Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Complaint {
+  id            String   @id @default(cuid())
+  description   String
+  symptoms      String?  // JSON array of symptoms
+  diagnosis     String?  // AI diagnosis result
+  recommendations String? // JSON array of recommendations
+  motorcycleId  String
+  userId        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  motorcycle Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Reminder {
+  id            String   @id @default(cuid())
+  type          String   // km_based, time_based, condition_based
+  dueKm         Int?
+  dueDate       DateTime?
+  description   String
+  isCompleted   Boolean  @default(false)
+  motorcycleId  String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  motorcycle Motorcycle @relation(fields: [motorcycleId], references: [id], onDelete: Cascade)
+}
